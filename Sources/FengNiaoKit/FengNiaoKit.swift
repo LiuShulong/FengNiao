@@ -12,6 +12,33 @@ public struct Foo{
 	}
 }
 
+enum FileType {
+    case swift
+    case objc
+    case xib
+    
+    init?(ext:String) {
+        switch ext.lowercased() {
+        case "swift":self = .swift
+        case "mm":self = .objc
+        case "xib","storyboard":self = .xib
+        default:return nil
+        }
+    }
+    
+    func searcher(extensions:[String]) -> StringSearcher {
+        switch self {
+        case .swift:
+            return SwiftSearcher(extensions:extensions)
+        case .objc:
+            return ObjCSearcher(extensions:extensions)
+        case .xib:
+            return XibSearcher(extensions:extensions)
+        }
+    }
+    
+}
+
 public struct FileInfo {
     let path: String
 }
@@ -35,11 +62,45 @@ public struct FengNiao {
         fatalError()
     }
     
-    func stringInUse() -> [String] {
+    func allStringInUse() -> Set<String> {
+        return stringsInUse(at: projectPath)
+    }
+    
+    func stringsInUse(at path:Path) -> Set<String> {
+        guard let subPaths = try? path.children() else {
+            print("Path reading error.")
+            return []
+        }
         
-        
-        
-        return []
+        var result = [String]()
+        for subPath in subPaths {
+            if subPath.lastComponent.hasPrefix(".") {
+                continue
+            }
+            if excludePaths.contains(subPath) {
+                continue
+            }
+            if subPath.isDirectory {
+                result.append(contentsOf: stringsInUse(at: subPath))
+            } else {
+                let fileExt = subPath.extension ?? ""
+                guard fileExtensions.contains(fileExt) else {
+                    continue
+                }
+                
+                let searcher:StringSearcher
+                if let fileType = FileType(ext:fileExt) {
+                    searcher = fileType.searcher(extensions:fileExtensions)
+                } else {
+                    searcher = GeneralSearcher(extensions:fileExtensions)
+                }
+                
+                let content = (try? subPath.read()) ?? ""
+                result.append(contentsOf: searcher.search(in: content))
+            }
+            
+        }
+        return Set(result)
     }
     
     func resourcesInUse() -> [String: String] {

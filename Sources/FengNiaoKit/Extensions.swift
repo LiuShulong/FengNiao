@@ -14,12 +14,19 @@ extension String {
         return NSMakeRange(0, utf16.count)
     }
     
-    var plainName: String {
-        let p = Path(self)
-        var result = p.lastComponentWithoutExtension
-        if result.hasSuffix("@2x") || result.hasSuffix("@3x") {
-            result = String(describing: result.utf16.dropLast(3))
+    func plainName(extensions:[String]) -> String {
+        let p = Path(self.lowercased())
+        var result:String
+        if let ext = p.extension,extensions.contains(ext){
+            result = p.lastComponentWithoutExtension
+        } else {
+            result = p.lastComponent
         }
-        return result
+        var r = result
+        if r.hasSuffix("@2x") || r.hasSuffix("@3x") {
+            r = String(describing: r.utf16.dropLast(3))
+        }
+        return r
     }
+    
 }

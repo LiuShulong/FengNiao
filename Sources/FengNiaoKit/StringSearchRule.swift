@@ -13,7 +13,8 @@ protocol StringSearcher {
 }
 
 protocol RegrexStringsSearcher: StringSearcher {
-    var patterns: [String]{get}
+    var extensions: [String] { get }
+    var patterns: [String]{ get }
 }
 
 extension RegrexStringsSearcher {
@@ -29,10 +30,41 @@ extension RegrexStringsSearcher {
             for checkingResult in matches {
                 let range = checkingResult.rangeAt(1)
                 let extracted = NSString(string: content).substring(with: range)
-                result.insert(extracted.plainName)
+                result.insert(extracted.plainName(extensions: extensions))
             }
         }
         return result
     }
 }
+
+struct SwiftSearcher: RegrexStringsSearcher{
+    var extensions: [String]
+    let patterns = ["\"(.+?)\""]
+}
+
+
+struct ObjCSearcher: RegrexStringsSearcher {
+    var extensions: [String]
+    let patterns = ["@\"(.+?)\"","\"(.+?)\""]
+}
+
+struct XibSearcher:RegrexStringsSearcher {
+    var extensions: [String]
+    let patterns: [String] = ["image name=\"(.+?)\""]
+    
+}
+
+struct GeneralSearcher: RegrexStringsSearcher {
+    var extensions: [String]
+    var patterns: [String] {
+        if extensions.isEmpty {
+            return []
+        }
+        
+        let joined = extensions.joined(separator: "|")
+        return["\"(.+?)\\.(\(joined))\""]
+    }
+    
+}
+
 
