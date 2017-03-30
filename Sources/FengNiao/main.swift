@@ -1,6 +1,7 @@
 import Foundation
 import CommandLineKit
 import Rainbow
+import FengNiaoKit
 
 let cli = CommandLineKit.CommandLine()
 
@@ -11,13 +12,16 @@ let resourceExtensionsOptions = MultiStringOption(shortFlag: "r",
                                     longFlag: "resource-extensions",
                                     helpMessage: "extension to search.")
 
-let excludePathsOptions = MultiStringOption(shortFlag: "e", longFlag: "excludePath",
+let excludePathsOptions = MultiStringOption(shortFlag: "e",
+                                            longFlag: "excludePath",
                                             helpMessage: "file extensions to search.")
 
-let fileExtensionOptions = MultiStringOption(shortFlag: "f", longFlag: "file-extensions",
-                      helpMessage: "file extensions to search.")
+let fileExtensionOptions = MultiStringOption(shortFlag: "f",
+                                             longFlag: "file-extensions",
+                                             helpMessage: "file extensions to search.")
 
-let help = BoolOption(shortFlag: "h", longFlag: "help",
+let help = BoolOption(shortFlag: "h",
+                      longFlag: "help",
                       helpMessage: "Prints a help message.")
 
 
@@ -58,3 +62,4 @@ let fileExtensions = fileExtensionOptions.value ?? ["storyboard","xib","swift","
 print("File path is \(projectOption.value!)")
 print("Compress is \(resourceExtensionsOptions.value)")
 print("Verbosity is \(fileExtensionOptions.value)")
+

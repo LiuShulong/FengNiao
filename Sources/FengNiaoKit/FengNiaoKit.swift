@@ -1,17 +1,11 @@
 import Foundation
 import PathKit
+import Rainbow
 
-public struct Foo{
-    
-    public init() {
-        
-    }
-    
-	public func bar(){
-		print("hello")
-	}
+enum FengNiaoKitError:Error {
+    case noResourceExtension
+    case noFileExtension
 }
-
 enum FileType {
     case swift
     case objc
@@ -58,8 +52,18 @@ public struct FengNiao {
         
     }
     
-    public func unusedResources() -> [String] {
-        fatalError()
+    public func unusedResources() throws -> [String] {
+        guard !resourceExtensions.isEmpty else {
+            throw FengNiaoKitError.noResourceExtension
+        }
+        
+        guard !fileExtensions.isEmpty else {
+            throw FengNiaoKitError.noFileExtension
+        }
+        
+        let allResources = allResourceFiles()
+        let allStrings = allStringInUse()
+        return []
     }
     
     func allStringInUse() -> Set<String> {
@@ -103,8 +107,49 @@ public struct FengNiao {
         return Set(result)
     }
     
-    func resourcesInUse() -> [String: String] {
-        fatalError()
+    func allResourceFiles() -> [String: String] {
+        guard let process = FindProcess(path: projectPath, extensions: resourceExtensions, exclude: excludePaths) else {
+            return [:]
+        }
+        
+        let found = process.execute()
+        var files = [String:String]()
+        
+        let regularDirEetensions = ["imageset","launchimage","appiconset","bundle"]
+        let nonDirExtensions = resourceExtensions.filter { !regularDirEetensions.contains($0) }
+        
+        fileLoop:  for file in found {
+            let dirPath = regularDirEetensions.map{ ".\($0)/" }
+            for dir in dirPath where file.contains(dir) {
+                continue fileLoop
+            }
+            
+            let filePath = Path(file)
+            if let ext = filePath.extension, filePath.isDirectory && nonDirExtensions.contains(ext) {
+                continue
+            }
+            
+            let key = file.plainName(extensions: resourceExtensions)
+            if let existing = files[key] {
+                print("Found duplicated file key:\(key).Exsiting:\(existing)".yellow.bold)
+                continue
+            }
+            
+            files[key] = file
+            
+        }
+    
+        
+        return files
+    }
+    
+    static func filterUnused(from all:[String: String], used: Set<String>) -> Set<String> {
+        let unusedPair = all.filter { key, _ in
+            return !used.contains(key)
+                && used.contains{ $0.similarPatternWithNumber(other: key) }
+        }
+        
+        return Set(unusedPair.map{ $0.value })
     }
     
     public func delete() -> () {
@@ -112,3 +157,6 @@ public struct FengNiao {
     }
     
 }
+
+
+
